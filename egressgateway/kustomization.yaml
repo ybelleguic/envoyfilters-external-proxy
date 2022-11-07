@@ -1,0 +1,9 @@
+namespace: egressgateway
+
+resources:
+- deployment.yaml
+- hpa.yaml
+- pdb.yaml
+- role.yaml
+- service.yaml
+- serviceaccount.yaml

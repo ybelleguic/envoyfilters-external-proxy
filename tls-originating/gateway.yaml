@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-egressgateway
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+  - port:
+      number: 80
+      name: https-port-for-tls-origination
+      protocol: HTTPS
+    hosts:
+    - edition.cnn.com
+    tls:
+      mode: ISTIO_MUTUAL

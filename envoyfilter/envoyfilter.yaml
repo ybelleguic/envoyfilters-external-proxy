@@ -1,0 +1,83 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: custom-squid
+  namespace: istio-config
+spec:
+  workloadSelector:
+    labels:
+      app: istio-egressgateway
+      istio: egressgateway
+  configPatches:
+  - applyTo: LISTENER
+    patch:
+      operation: ADD
+      value:
+        name: api_proxy_listener
+        address:
+          pipe:
+            path: "@/cluster_0"
+        filter_chains:
+          - filters:
+              - name: tcp
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+                  stat_prefix: tcp_stats
+                  cluster: "proxy_cluster"
+                  tunneling_config:
+                    hostname: edition.cnn.com:443
+                    headers_to_add:
+                      - header:
+                          key: Proxy-Authorization
+                          value: Basic dXNlcjpwYXNzd29yZA== # replace with your credentials
+                        append: false
+  - applyTo: CLUSTER
+    match:
+      context: GATEWAY
+      cluster:
+        name: "outbound|443||edition.cnn.com"
+    patch:
+      operation: REMOVE
+  - applyTo: CLUSTER
+    match:
+      context: GATEWAY
+      cluster:
+        name: "outbound|443||edition.cnn.com"
+    patch:
+      operation: ADD
+      value:
+        name: "outbound|443||edition.cnn.com"
+        connect_timeout: 5s
+        upstream_connection_options:
+          tcp_keepalive: {}
+        type: STATIC
+        load_assignment:
+          cluster_name: "outbound|443||edition.cnn.com"
+          endpoints:
+            - lb_endpoints:
+                - endpoint:
+                    address:
+                      pipe:
+                        path: "@/cluster_0"
+        transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+            sni: edition.cnn.com
+  - applyTo: CLUSTER
+    patch:
+      operation: ADD
+      value:
+        name: proxy_cluster
+        connect_timeout: 0.25s
+        type: STRICT_DNS
+        lb_policy: ROUND_ROBIN
+        load_assignment:
+          cluster_name: proxy_cluster
+          endpoints:
+            - lb_endpoints:
+                - endpoint:
+                    address:
+                      socket_address:
+                        address: tinyproxy.tinyproxy.svc.cluster.local
+                        port_value: 8888

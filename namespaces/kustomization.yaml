@@ -1,0 +1,6 @@
+resources:
+- egressgateway.yaml
+- sleep.yaml
+
+commonLabels:
+  istio-injection: enabled

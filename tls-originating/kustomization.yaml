@@ -1,0 +1,7 @@
+namespace: sleep
+
+resources:
+- destinationrule.yaml
+- gateway.yaml
+- serviceentry.yaml
+- virtualservice.yaml

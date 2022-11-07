@@ -1,0 +1,4 @@
+namespace: egressgateway
+
+resources:
+  - envoyfilter.yaml
